@@ -1,112 +1,211 @@
-export default class Vec2 {
+export interface MarkerSettings {
+  tailColor: string,
+  tailLength: number
+};
+
+export interface DrawSettings {
+  lineWidth: number,
+  lineColor: string,
+  markerSettings?: MarkerSettings
+};
+
+export class Vec2 {
   public x: number;
   public y: number;
+
+  private static drawSetting: DrawSettings = {
+    lineWidth: 1,
+    lineColor: "000",
+    markerSettings: {
+      tailColor: "red",
+      tailLength: 5
+    }
+  }
 
   constructor(x: number, y: number) {
     this.x = x;
     this.y = y;
   }
 
-  static zero(): Vec2 {
+  public static zero(): Vec2 {
     return new Vec2(0, 0);
   }
 
-  static one(): Vec2 {
+  public static one(): Vec2 {
     return new Vec2(1, 1);
   }
 
-  static fromAngle(angle: number): Vec2 {
+  public static fromAngle(angle: number): Vec2 {
     return new Vec2(Math.cos(angle), Math.sin(angle));
   }
 
   /** Map a noise sample in [-1; 1] to a unit vector */
-  static fromNoise(n: number): Vec2 {
+  public static fromNoise(n: number): Vec2 {
     n = Math.max(-1, Math.min(1, n));
     const angle = (n + 1) * Math.PI;
     return Vec2.fromAngle(angle);
   }
 
-  add(v: Vec2): Vec2 {
+  public clone(): Vec2 {
+    return new Vec2(this.x, this.y);
+  }
+
+  public add(v: Vec2): Vec2 {
     return new Vec2(this.x + v.x, this.y + v.y);
   }
 
-  addMut(v: Vec2): this {
+  public addMut(v: Vec2): this {
     this.x += v.x;
     this.y += v.y;
     return this;
   }
 
-  sub(v: Vec2): Vec2 {
+  public sub(v: Vec2): Vec2 {
     return new Vec2(this.x - v.x, this.y - v.y);
   }
 
-  subMut(v: Vec2): this {
+  public subMut(v: Vec2): this {
     this.x -= v.x;
     this.y -= v.y;
     return this;
   }
 
-  mul(v: Vec2): Vec2 {
+  public mul(v: Vec2): Vec2 {
     return new Vec2(this.x * v.x, this.y * v.y);
   }
 
-  mulMut(v: Vec2): this {
+  public mulMut(v: Vec2): this {
     this.x *= v.x;
     this.y *= v.y;
     return this;
   }
 
-  scale(s: number): Vec2 {
+  public scale(s: number): Vec2 {
     return new Vec2(this.x * s, this.y * s);
   }
 
-  scaleMut(s: number): this {
+  public scaleMut(s: number): this {
     this.x *= s;
     this.y *= s;
     return this;
   }
 
-  eq(v: Vec2): boolean {
+  // rotation matrix: 
+  // cos(theta) -sin(theta)
+  // sin(theta) cos(theta)
+
+  /** Performs a mathematical counterclockwise rotation that appears clockwise on canvas
+   * because the y-axis is flipped
+   */
+  public rotate(angle: number): Vec2 {
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    return new Vec2(
+      this.x * cos - this.y * sin,
+      this.x * sin + this.y * cos
+    );
+  }
+
+  /** Performs a mathematical counterclockwise rotation that appears clockwise on canvas
+   * because the y-axis is flipped
+   */
+  public rotateMut(angle: number): this {
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    const x = this.x;
+    const y = this.y;
+    this.x = x * cos - y * sin;
+    this.y = x * sin + y * cos;
+    return this;
+  }
+
+  public angle(): number {
+    return Math.atan2(this.y, this.x);
+  }
+
+  public eq(v: Vec2): boolean {
     return this.x === v.x && this.y === v.y;
   }
 
-  len(): number {
+  public len(): number {
     return Math.hypot(this.x, this.y);  // Math.sqrt(x² + y²)
   }
 
-  lenSqr(): number {
+  public lenSqr(): number {
     return this.x * this.x + this.y * this.y
   }
 
-  normalize(): Vec2 {
+  public normalize(): Vec2 {
     const len = this.len();
     return len === 0 ? Vec2.zero() : this.scale(1 / len);
   }
 
-  distTo(v: Vec2): number {
-    return v.sub(this).len();
+  public to(v: Vec2): Vec2 {
+    return v.sub(this);
   }
 
-  dirTo(v: Vec2): Vec2 {
+  public distTo(v: Vec2): number {
+    return this.to(v).len();
+  }
+
+  public dirTo(v: Vec2): Vec2 {
     return v.sub(this).normalize();
   }
 
-  dot(v: Vec2): number {
+  public dot(v: Vec2): number {
     return this.x * v.x + this.y * v.y;
   }
 
-  toString(): string {
+  public toString(): string {
     return `Vec2(${this.x.toFixed(3)}, ${this.y.toFixed(3)})`;
   }
 
-  toArray(): number[] {
+  public toArray(): number[] {
     return [this.x, this.y];
   }
 
-  toObject(): { x: number; y: number } {
+  public toObject(): { x: number; y: number } {
     return {
       x: this.x,
       y: this.y
     }
+  }
+
+  private drawLine(
+    ctx: CanvasRenderingContext2D,
+    width: number,
+    origin: Vec2,
+    color = "#000"
+  ): void {
+    ctx.save();
+
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+
+    ctx.beginPath();
+    ctx.moveTo(origin.x, origin.y);
+    ctx.lineTo(origin.x + this.x, origin.y + this.y);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  public draw(
+    ctx: CanvasRenderingContext2D,
+    origin: Vec2,
+    settings: DrawSettings = Vec2.drawSetting
+  ) {
+    // draw actual vector
+    this.drawLine(ctx, settings.lineWidth, origin);
+
+    // optionally draw marker
+    if (settings.markerSettings) {
+      ctx.save();
+      const perpVec = this.normalize().rotateMut(Math.PI / 2).scaleMut(settings.markerSettings.tailLength);
+      const perpOpp = perpVec.scale(-1).normalize().scale(perpVec.len() * 0.5);
+      perpVec.drawLine(ctx, 1, origin.addMut(perpOpp));
+      ctx.restore();
+    }
+
   }
 }
