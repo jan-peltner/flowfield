@@ -13,7 +13,7 @@ export class Vec2 {
   public x: number;
   public y: number;
 
-  private static drawSetting: DrawSettings = {
+  private static drawSettings: DrawSettings = {
     lineWidth: 1,
     lineColor: "000",
     markerSettings: {
@@ -204,10 +204,10 @@ export class Vec2 {
   public draw(
     ctx: CanvasRenderingContext2D,
     origin: Vec2,
-    settings: DrawSettings = Vec2.drawSetting
+    settings: DrawSettings = Vec2.drawSettings
   ) {
     // draw actual vector
-    this.drawLine(ctx, settings.lineWidth, origin);
+    this.drawLine(ctx, settings.lineWidth, origin, settings.lineColor);
 
     // optionally draw marker
     if (settings.markerSettings) {
@@ -215,7 +215,7 @@ export class Vec2 {
 
       const perpVec = this.normalize().rotateMut(Math.PI / 2).scaleMut(settings.markerSettings.tailLength);
       const perpOppVec = perpVec.scale(-1).normalize().scale(perpVec.len() * 0.5);
-      perpVec.drawLine(ctx, 1, origin.addMut(perpOppVec), settings.markerSettings.tailColor);
+      perpVec.drawLine(ctx, 1, origin.add(perpOppVec), settings.markerSettings.tailColor);
 
       ctx.restore();
     }

@@ -1,11 +1,17 @@
 import { createNoise2D, type NoiseFunction2D } from "simplex-noise";
 import { Vec2 } from "./vec";
 
+interface VectorFieldSample {
+  origin: Vec2,
+  vector: Vec2
+};
+
 interface State {
   ctx: CanvasRenderingContext2D,
   lastTs: number,
   noise: NoiseFunction2D,
-  vecs: Vec2[]
+  samples: VectorFieldSample[]
+  smoothness: number
 };
 
 function resizeCanvas(canvas: HTMLCanvasElement) {
@@ -21,19 +27,9 @@ function render(ts: number, state: State): void {
 
   state.ctx.fillText(`dt: ${dt.toFixed(2)}ms`, 10, 20);
 
-  // state.vecs[0].rotateMut((2 * Math.PI) / 360)
-  state.vecs[0].drawPoint(state.ctx, 2);
-  // state.vecs[0].draw(
-  //   state.ctx,
-  //   new Vec2(100, 100),
-  //   {
-  //     lineColor: "#000",
-  //     lineWidth: 1,
-  //     markerSettings: {
-  //       tailColor: "#000",
-  //       tailLength: 10
-  //     }
-  //   });
+  state.samples.forEach(sample => {
+    sample.vector.draw(state.ctx, sample.origin);
+  })
 
   requestAnimationFrame((ts) => render(ts, state));
 }
@@ -61,9 +57,19 @@ function main(): void {
     ctx: ctx,
     lastTs: 0,
     noise: noise,
-    vecs: []
+    samples: [],
+    smoothness: 0.001
   };
-  state.vecs.push(Vec2.fromAngle(0).scaleMut(100).addMut(new Vec2(100, 100)));
+
+  for (let y = 0; y < state.ctx.canvas.height; y += 20) {
+    for (let x = 0; x < state.ctx.canvas.width; x += 20) {
+      const sample: VectorFieldSample = {
+        origin: new Vec2(x, y),
+        vector: Vec2.fromNoise(state.noise(x * state.smoothness, y * state.smoothness)).scaleMut(10)
+      }
+      state.samples.push(sample);
+    }
+  }
   requestAnimationFrame((ts) => render(ts, state));
 }
 
