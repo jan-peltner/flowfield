@@ -228,7 +228,6 @@ export class Vec2 {
     ctx.fillStyle = color;
     ctx.beginPath();
     ctx.arc(this.x, this.y, radius, 0, 2 * Math.PI);
-    ctx.closePath();
     ctx.fill();
 
     ctx.restore();
