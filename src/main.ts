@@ -21,17 +21,19 @@ function render(ts: number, state: State): void {
 
   state.ctx.fillText(`dt: ${dt.toFixed(2)}ms`, 10, 20);
 
-  state.vecs[0].draw(
-    state.ctx,
-    new Vec2(100, 100),
-    {
-      lineColor: "#000",
-      lineWidth: 1,
-      markerSettings: {
-        tailColor: "000",
-        tailLength: 10
-      }
-    });
+  // state.vecs[0].rotateMut((2 * Math.PI) / 360)
+  state.vecs[0].drawPoint(state.ctx, 2);
+  // state.vecs[0].draw(
+  //   state.ctx,
+  //   new Vec2(100, 100),
+  //   {
+  //     lineColor: "#000",
+  //     lineWidth: 1,
+  //     markerSettings: {
+  //       tailColor: "#000",
+  //       tailLength: 10
+  //     }
+  //   });
 
   requestAnimationFrame((ts) => render(ts, state));
 }
@@ -61,7 +63,7 @@ function main(): void {
     noise: noise,
     vecs: []
   };
-  state.vecs.push(Vec2.fromAngle(0).scaleMut(100));
+  state.vecs.push(Vec2.fromAngle(0).scaleMut(100).addMut(new Vec2(100, 100)));
   requestAnimationFrame((ts) => render(ts, state));
 }
 

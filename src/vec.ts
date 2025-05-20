@@ -140,6 +140,17 @@ export class Vec2 {
     return len === 0 ? Vec2.zero() : this.scale(1 / len);
   }
 
+  public normalizeMut(): this {
+    const len = this.len();
+    if (len === 0) {
+      this.x = 0;
+      this.y = 0;
+    } else {
+      this.scaleMut(1 / len);
+    }
+    return this;
+  }
+
   public to(v: Vec2): Vec2 {
     return v.sub(this);
   }
@@ -201,11 +212,25 @@ export class Vec2 {
     // optionally draw marker
     if (settings.markerSettings) {
       ctx.save();
+
       const perpVec = this.normalize().rotateMut(Math.PI / 2).scaleMut(settings.markerSettings.tailLength);
-      const perpOpp = perpVec.scale(-1).normalize().scale(perpVec.len() * 0.5);
-      perpVec.drawLine(ctx, 1, origin.addMut(perpOpp));
+      const perpOppVec = perpVec.scale(-1).normalize().scale(perpVec.len() * 0.5);
+      perpVec.drawLine(ctx, 1, origin.addMut(perpOppVec), settings.markerSettings.tailColor);
+
       ctx.restore();
     }
 
+  }
+
+  public drawPoint(ctx: CanvasRenderingContext2D, radius: number = 2, color: string = "#000") {
+    ctx.save();
+
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, radius, 0, 2 * Math.PI);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
   }
 }
