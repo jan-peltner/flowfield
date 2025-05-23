@@ -119,12 +119,22 @@ export class Vec2 {
     return this;
   }
 
+  public map(fn: (comp: number, index: 0 | 1) => number): this {
+    this.x = fn(this.x, 0);
+    this.y = fn(this.y, 1);
+    return this;
+  }
+
+  public mapMut(fn: (comp: number, index: 0 | 1) => number): Vec2 {
+    return new Vec2(fn(this.x, 0), fn(this.y, 1));
+  }
+
   public angle(): number {
     return Math.atan2(this.y, this.x);
   }
 
-  public eq(v: Vec2): boolean {
-    return this.x === v.x && this.y === v.y;
+  public eq(v: Vec2, epsilon: number = 1e-6): boolean {
+    return Math.abs(this.x - v.x) <= epsilon && Math.abs(this.y - v.y) <= epsilon;
   }
 
   public len(): number {
