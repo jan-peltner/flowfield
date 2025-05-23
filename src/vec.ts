@@ -15,7 +15,7 @@ export class Vec2 {
 
   private static drawSettings: DrawSettings = {
     lineWidth: 1,
-    lineColor: "000",
+    lineColor: "#000",
     markerSettings: {
       tailColor: "red",
       tailLength: 5
