@@ -1,16 +1,12 @@
 import { createNoise2D, type NoiseFunction2D } from "simplex-noise";
-import { Vec2 } from "./vec";
-
-interface VectorFieldSample {
-  origin: Vec2,
-  vector: Vec2
-};
+import { Vec2d, type Rect } from "./vec2d";
+import { Ray2d } from "./ray2d";
 
 interface State {
   ctx: CanvasRenderingContext2D,
   lastTs: number,
   noise: NoiseFunction2D,
-  samples: VectorFieldSample[]
+  rays: Ray2d[]
   smoothness: number
 };
 
@@ -27,9 +23,9 @@ function render(ts: number, state: State): void {
 
   state.ctx.fillText(`dt: ${dt.toFixed(2)}ms`, 10, 20);
 
-  state.samples.forEach(sample => {
-    sample.vector.draw(state.ctx, sample.origin);
-  })
+  state.rays.forEach(ray => {
+    ray.draw(state.ctx);
+  });
 
   requestAnimationFrame((ts) => render(ts, state));
 }
@@ -57,17 +53,17 @@ function main(): void {
     ctx: ctx,
     lastTs: 0,
     noise: noise,
-    samples: [],
+    rays: [],
     smoothness: 0.001
   };
 
   for (let y = 0; y < state.ctx.canvas.height; y += 20) {
     for (let x = 0; x < state.ctx.canvas.width; x += 20) {
-      const sample: VectorFieldSample = {
-        origin: new Vec2(x, y),
-        vector: Vec2.fromNoise(state.noise(x * state.smoothness, y * state.smoothness)).scaleMut(10)
-      }
-      state.samples.push(sample);
+      const ray: Ray2d = new Ray2d(
+        new Vec2d(x, y),
+        Vec2d.fromNoise(state.noise(x * state.smoothness, y * state.smoothness)).scaleMut(10)
+      )
+      state.rays.push(ray);
     }
   }
   requestAnimationFrame((ts) => render(ts, state));
