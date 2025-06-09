@@ -83,6 +83,8 @@ export class Ray2d {
     let ray: Ray2d | null = null;
 
     rays.forEach((r) => {
+      if (this.origin.eq(r.origin) && this.dir.eq(r.dir)) return;
+
       const ret = this.intersect(r);
 
       if (ret !== null) {
@@ -105,5 +107,21 @@ export class Ray2d {
 
   public drawOrigin(ctx: CanvasRenderingContext2D, radius: number = 2, color: string = "#000") {
     this.origin.drawPoint(ctx, radius, color);
+  }
+
+  public drawIntersection(ctx: CanvasRenderingContext2D, ray: Ray2d) {
+    const intersection = this.intersect(ray);
+    if (intersection === null) return;
+
+    const [vec] = intersection;
+    vec.drawPoint(ctx);
+  }
+
+  public drawClosestIntersection(ctx: CanvasRenderingContext2D, rays: Ray2d[], radius: number = 2, color: string = "#f00") {
+    const intersection = this.intersectClosest(rays);
+    if (intersection === null) return;
+
+    const [vec] = intersection;
+    vec.drawPoint(ctx, radius, color);
   }
 }

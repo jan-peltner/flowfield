@@ -1,13 +1,11 @@
-import { createNoise2D, type NoiseFunction2D } from "simplex-noise";
 import { Vec2d, type Rect } from "./vec2d";
 import { Ray2d } from "./ray2d";
+import { Flowfield } from "./flowfield";
 
 interface State {
   ctx: CanvasRenderingContext2D,
   lastTs: number,
-  noise: NoiseFunction2D,
-  rays: Ray2d[]
-  smoothness: number
+  flowfield: Flowfield
 };
 
 function resizeCanvas(canvas: HTMLCanvasElement) {
@@ -16,16 +14,12 @@ function resizeCanvas(canvas: HTMLCanvasElement) {
 }
 
 function render(ts: number, state: State): void {
-  const dt = ts - state.lastTs;
+  const dt = (ts - state.lastTs) / 1000;
   state.lastTs = ts;
 
   state.ctx.clearRect(0, 0, state.ctx.canvas.width, state.ctx.canvas.height);
-
-  state.ctx.fillText(`dt: ${dt.toFixed(2)}ms`, 10, 20);
-
-  state.rays.forEach(ray => {
-    ray.draw(state.ctx);
-  });
+  // state.flowfield.drawNoise(0.01);
+  state.flowfield.drawFlowlines();
 
   requestAnimationFrame((ts) => render(ts, state));
 }
@@ -44,28 +38,36 @@ function main(): void {
     return;
   }
 
-  const noise = createNoise2D();
-
   window.addEventListener("resize", () => resizeCanvas(canvas));
   resizeCanvas(canvas);
 
+  const palette = [
+    "#003049",
+    "#d62828",
+    "f77f00",
+    "fcbf49",
+    "eae2b7"
+  ];
+
+  const flowfield = Flowfield.createInstance(ctx, palette);
+  flowfield.smoothness = 0.001;
+
   let state: State = {
-    ctx: ctx,
+    ctx,
     lastTs: 0,
-    noise: noise,
-    rays: [],
-    smoothness: 0.001
+    flowfield
   };
 
-  for (let y = 0; y < state.ctx.canvas.height; y += 20) {
-    for (let x = 0; x < state.ctx.canvas.width; x += 20) {
-      const ray: Ray2d = new Ray2d(
-        new Vec2d(x, y),
-        Vec2d.fromNoise(state.noise(x * state.smoothness, y * state.smoothness)).scaleMut(10)
-      )
-      state.rays.push(ray);
+  for (let i = 0; i < 10000; ++i) {
+    state.flowfield.flowlineFrom(Vec2d.random({
+      minX: 0,
+      minY: 0,
+      maxX: state.ctx.canvas.width,
+      maxY: state.ctx.canvas.height,
     }
+    ))
   }
+
   requestAnimationFrame((ts) => render(ts, state));
 }
 

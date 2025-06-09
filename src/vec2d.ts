@@ -49,6 +49,12 @@ export class Vec2d {
     );
   }
 
+  public static random(rect: Rect): Vec2d {
+    const x = Math.floor(Math.random() * (rect.maxX - rect.minX + 1)) + rect.minX;
+    const y = Math.floor(Math.random() * (rect.maxY - rect.minY + 1)) + rect.minY;
+    return new Vec2d(x, y);
+  }
+
   public static fromAngle(angle: number): Vec2d {
     return new Vec2d(Math.cos(angle), Math.sin(angle));
   }
