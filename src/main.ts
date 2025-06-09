@@ -18,7 +18,10 @@ function render(ts: number, state: State): void {
   state.lastTs = ts;
 
   state.ctx.clearRect(0, 0, state.ctx.canvas.width, state.ctx.canvas.height);
-  // state.flowfield.drawNoise(0.01);
+  state.ctx.fillStyle = "#181818";
+  state.ctx.fillRect(0, 0, state.ctx.canvas.width, state.ctx.canvas.height)
+
+  // state.flowfield.drawNoise(0.01, { lineWidth: 1, lineColor: "#ffffff", markerSettings: { tailColor: "#ff0000", tailLength: 5 } });
   state.flowfield.drawFlowlines();
 
   requestAnimationFrame((ts) => render(ts, state));
@@ -44,9 +47,9 @@ function main(): void {
   const palette = [
     "#003049",
     "#d62828",
-    "f77f00",
-    "fcbf49",
-    "eae2b7"
+    "#f77f00",
+    "#fcbf49",
+    "#eae2b7"
   ];
 
   const flowfield = Flowfield.createInstance(ctx, palette);
@@ -58,7 +61,7 @@ function main(): void {
     flowfield
   };
 
-  for (let i = 0; i < 10000; ++i) {
+  for (let i = 0; i < 1000; ++i) {
     state.flowfield.flowlineFrom(Vec2d.random({
       minX: 0,
       minY: 0,

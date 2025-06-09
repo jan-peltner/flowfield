@@ -1,5 +1,5 @@
 import { createNoise2D, type NoiseFunction2D } from "simplex-noise";
-import { Vec2d } from "./vec2d";
+import { Vec2d, type DrawSettings } from "./vec2d";
 import { Ray2d } from "./ray2d";
 
 export interface Flowline {
@@ -58,10 +58,10 @@ export class Flowfield {
     }
   }
 
-  public flowlineFrom(origin: Vec2d): void {
+  public flowlineFrom(origin: Vec2d, segmentLen: number = 5): void {
     const originRay = new Ray2d(
       origin,
-      Vec2d.fromNoise(this.noiseFn(origin.x, origin.y)),
+      Vec2d.fromNoise(this.noiseFn(origin.x * this.smoothness, origin.y * this.smoothness)),
       false
     );
 
@@ -72,9 +72,8 @@ export class Flowfield {
     };
 
     for (let i = 0; i < 100; ++i) {
-      const lastRay = line.path[line.path.length - 1];
-      const newOrigin = lastRay.origin.add(lastRay.dir.scaleMut(1));
-
+      const lastRay = line.path[i];
+      const newOrigin = lastRay.origin.add(lastRay.dir.scale(segmentLen));
 
       if (newOrigin.x < 0 || newOrigin.x >= this.cnvsCtx.canvas.width || newOrigin.y < 0 || newOrigin.y >= this.cnvsCtx.canvas.height) break;
 
@@ -109,12 +108,12 @@ export class Flowfield {
     this.cnvsCtx.restore();
   }
 
-  public drawNoise(resolution: number): void {
+  public drawNoise(resolution: number, drawSettings?: DrawSettings): void {
     // check if noise rays have already been computed
     if (this.noiseRays.length === 0) this.computeNoiseRays(resolution);
 
     this.noiseRays.forEach(ray => {
-      ray.draw(this.cnvsCtx)
+      ray.draw(this.cnvsCtx, drawSettings);
     })
   }
 }
