@@ -23,6 +23,8 @@ function render(ts: number, state: State): void {
 
   // state.flowfield.drawNoise(0.01, { lineWidth: 1, lineColor: "#ffffff", markerSettings: { tailColor: "#ff0000", tailLength: 5 } });
   state.flowfield.drawFlowlines();
+  // state.flowfield.drawFlowlinesSegmentwise();
+
 
   requestAnimationFrame((ts) => render(ts, state));
 }
@@ -61,14 +63,14 @@ function main(): void {
     flowfield
   };
 
-  for (let i = 0; i < 1000; ++i) {
+  for (let i = 0; i < 10000; ++i) {
     state.flowfield.flowlineFrom(Vec2d.random({
       minX: 0,
       minY: 0,
       maxX: state.ctx.canvas.width,
       maxY: state.ctx.canvas.height,
     }
-    ))
+    ), 50, 10)
   }
 
   requestAnimationFrame((ts) => render(ts, state));

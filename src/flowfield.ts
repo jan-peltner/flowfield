@@ -4,7 +4,8 @@ import { Ray2d } from "./ray2d";
 
 export interface Flowline {
   path: Ray2d[],
-  color: Color
+  color: Color,
+  segmentIndex: number
 };
 
 export type Color = string;
@@ -27,7 +28,7 @@ export class Flowfield {
     return Flowfield.instance;
   }
 
-  private cnvsCtx: CanvasRenderingContext2D;
+  private canvasCtx: CanvasRenderingContext2D;
   public readonly noiseFn: NoiseFunction2D;
   private noiseRays: Ray2d[] = [];
   public smoothness: number = 0.001;
@@ -35,7 +36,7 @@ export class Flowfield {
   private palette?: Color[];
 
   private constructor(ctx: CanvasRenderingContext2D, palette?: Color[]) {
-    this.cnvsCtx = ctx;
+    this.canvasCtx = ctx;
     this.noiseFn = createNoise2D();
     this.palette = palette;
   }
@@ -44,10 +45,10 @@ export class Flowfield {
     // normalized resolution -> ..=1
     if (resolution < 0.01 || resolution > 1) throw new Error("resolution must be a value between 0.01 and 1");
 
-    const stepX = this.cnvsCtx.canvas.width * resolution;
-    const stepY = this.cnvsCtx.canvas.height * resolution;
-    for (let y = 0; y < this.cnvsCtx.canvas.height; y += stepY) {
-      for (let x = 0; x < this.cnvsCtx.canvas.width; x += stepX) {
+    const stepX = this.canvasCtx.canvas.width * resolution;
+    const stepY = this.canvasCtx.canvas.height * resolution;
+    for (let y = 0; y < this.canvasCtx.canvas.height; y += stepY) {
+      for (let x = 0; x < this.canvasCtx.canvas.width; x += stepX) {
         const ray: Ray2d = new Ray2d(
           new Vec2d(x, y),
           Vec2d.fromNoise(this.noiseFn(x * this.smoothness, y * this.smoothness)).scaleMut(10),
@@ -58,7 +59,7 @@ export class Flowfield {
     }
   }
 
-  public flowlineFrom(origin: Vec2d, segmentLen: number = 5): void {
+  public flowlineFrom(origin: Vec2d, segments: number = 50, segmentLen: number = 10): void {
     const originRay = new Ray2d(
       origin,
       Vec2d.fromNoise(this.noiseFn(origin.x * this.smoothness, origin.y * this.smoothness)),
@@ -68,14 +69,15 @@ export class Flowfield {
     const color = this.palette?.[Math.floor(Math.random() * this.palette.length)] ?? "#000000";
     const line: Flowline = {
       path: [originRay],
-      color
+      color,
+      segmentIndex: 0
     };
 
-    for (let i = 0; i < 100; ++i) {
+    for (let i = 0; i < segments; ++i) {
       const lastRay = line.path[i];
       const newOrigin = lastRay.origin.add(lastRay.dir.scale(segmentLen));
 
-      if (newOrigin.x < 0 || newOrigin.x >= this.cnvsCtx.canvas.width || newOrigin.y < 0 || newOrigin.y >= this.cnvsCtx.canvas.height) break;
+      if (newOrigin.x < 0 || newOrigin.x >= this.canvasCtx.canvas.width || newOrigin.y < 0 || newOrigin.y >= this.canvasCtx.canvas.height) break;
 
       const newDir = Vec2d.fromNoise(this.noiseFn(newOrigin.x * this.smoothness, newOrigin.y * this.smoothness));
       line.path.push(new Ray2d(
@@ -88,24 +90,45 @@ export class Flowfield {
     this.flowlines.push(line);
   }
 
-  public drawFlowlines(): void {
-    this.cnvsCtx.save();
-    this.cnvsCtx.lineWidth = 3;
+  public drawFlowlines(width: number = 3): void {
+    this.canvasCtx.save();
+    this.canvasCtx.lineWidth = width;
 
     this.flowlines.forEach(flowline => {
-      this.cnvsCtx.strokeStyle = flowline.color;
-      this.cnvsCtx.beginPath();
+      this.canvasCtx.strokeStyle = flowline.color;
+      this.canvasCtx.beginPath();
       flowline.path.forEach((ray, idx) => {
         if (idx === 0) {
-          this.cnvsCtx.moveTo(ray.origin.x, ray.origin.y);
+          this.canvasCtx.moveTo(ray.origin.x, ray.origin.y);
         } else {
-          this.cnvsCtx.lineTo(ray.origin.x, ray.origin.y);
+          this.canvasCtx.lineTo(ray.origin.x, ray.origin.y);
         }
       })
-      this.cnvsCtx.stroke();
+      this.canvasCtx.stroke();
     });
 
-    this.cnvsCtx.restore();
+    this.canvasCtx.restore();
+  }
+
+  public drawFlowlinesSegmentwise(width: number = 3): void {
+    this.canvasCtx.save();
+    this.canvasCtx.lineWidth = width;
+
+    this.flowlines.forEach(flowline => {
+      this.canvasCtx.strokeStyle = flowline.color;
+      this.canvasCtx.beginPath();
+      flowline.path.forEach((ray, idx) => {
+        if (idx === 0) {
+          this.canvasCtx.moveTo(ray.origin.x, ray.origin.y);
+        } else if (idx <= flowline.segmentIndex) {
+          this.canvasCtx.lineTo(ray.origin.x, ray.origin.y);
+        }
+      })
+      this.canvasCtx.stroke();
+      flowline.segmentIndex++;
+    });
+
+    this.canvasCtx.restore();
   }
 
   public drawNoise(resolution: number, drawSettings?: DrawSettings): void {
@@ -113,7 +136,7 @@ export class Flowfield {
     if (this.noiseRays.length === 0) this.computeNoiseRays(resolution);
 
     this.noiseRays.forEach(ray => {
-      ray.draw(this.cnvsCtx, drawSettings);
+      ray.draw(this.canvasCtx, drawSettings);
     })
   }
 }
